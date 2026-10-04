@@ -107,6 +107,8 @@ export function setup(ctx: SpindleFrontendContext): () => void {
 
   const display = ctx.display;
   if (!display) throw new Error('LumiRealm requires the current Lumiverse display resolver API');
+  const { state, settings } = ctx;
+  if (!state || !settings) throw new Error('LumiRealm requires the current Lumiverse state and settings APIs');
   const activationPatterns = createActivationPatternCache();
   cleanups.push(subscribeActivationPatternChanges(ctx.events, activationPatterns, keys => display.invalidate(keys)));
   const invalidateActivationVars = (chatId: string, changed: string[]): void => {
@@ -333,6 +335,22 @@ export function setup(ctx: SpindleFrontendContext): () => void {
     }
     if (!isLogTransportNoise(msg.type)) flog.trace(`frontend send: ${msg.type}`, msg);
     ctx.sendToBackend(msg);
+  };
+
+  const reportActivePreset = (presetId: string | null): void => {
+    sendToBackend({ type: 'active_preset', presetId });
+  };
+  // A host that refuses this selector must not take the rest of the frontend down with it.
+  let presetTracking = true;
+  try {
+    cleanups.push(state.subscribe<string | null>('loom.activePresetId', reportActivePreset));
+  } catch (err) {
+    presetTracking = false;
+    flog.error('Imported preset regex stays suspended: the host refused the active preset selector', err);
+  }
+  // The selector reads null until settings hydrate, and reporting that would suspend the active preset's rules.
+  const reportHydratedActivePreset = (): void => {
+    if (presetTracking && settings.core.isReady()) reportActivePreset(state.get<string | null>('loom.activePresetId'));
   };
 
   // Blocking import-progress overlay shown from picker-click and realm-Import
@@ -712,6 +730,7 @@ export function setup(ctx: SpindleFrontendContext): () => void {
     sendToBackend({ type: 'get_cards' });
     sendToBackend({ type: 'log_request_state' });
     reportDims('handshake', /* force */ true);
+    reportHydratedActivePreset();
   }
 
   handshake();
