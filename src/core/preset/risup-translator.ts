@@ -525,7 +525,8 @@ export function translateRisuPromptBlocks(
           enabled,
           position,
           depth,
-          marker: seenChat ? 'world_info_after' : 'world_info_before',
+          // Normal Risu lore uses the host's before bucket; position and depth place that bucket.
+          marker: 'world_info_before',
           content: text,
           isLocked: false,
           color: null,

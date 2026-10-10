@@ -35,8 +35,8 @@ test('places a Risu lorebook item between chat items inside the history', () => 
   ])).toEqual([
     ['Lore Before', 'pre_history', 0, 'world_info_before'],
     ['Older', 'in_history', 0, 'chat_history'],
-    ['Lore Between', 'in_history', 6, 'world_info_after'],
-    ['Lore After', 'post_history', 0, 'world_info_after'],
+    ['Lore Between', 'in_history', 6, 'world_info_before'],
+    ['Lore After', 'post_history', 0, 'world_info_before'],
   ]);
 });
 

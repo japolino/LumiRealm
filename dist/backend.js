@@ -14170,7 +14170,7 @@ function translateRisuPromptBlocks(template, toggleGroups) {
           enabled,
           position,
           depth,
-          marker: seenChat ? "world_info_after" : "world_info_before",
+          marker: "world_info_before",
           content: text,
           isLocked: false,
           color: null,
