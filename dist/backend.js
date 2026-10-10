@@ -14355,7 +14355,12 @@ function translateRisuPreset(raw, fallbackName = "Imported Preset") {
       ...raw.aiModel ? { risuAiModel: raw.aiModel } : {},
       ...raw.subModel ? { risuSubModel: raw.subModel } : {},
       promptVariables: defaultsByBlockId,
-      ...wholeHistory ? {} : { lumirealm: { chatRanges } }
+      ...!wholeHistory || typeof raw.templateDefaultVariables === "string" ? {
+        lumirealm: {
+          ...wholeHistory ? {} : { chatRanges },
+          ...typeof raw.templateDefaultVariables === "string" ? { defaultVariables: raw.templateDefaultVariables } : {}
+        }
+      } : {}
     }
   };
   return { preset, regexScripts, skippedRegex };
@@ -31094,10 +31099,24 @@ function getArgs(ctx) {
 }
 function readChatVar(ctx, name) {
   const variables = ctx?.env?.variables;
-  const value = varRecord(variables?.["chat"])?.[name];
+  const chat = varRecord(variables?.["chat"]);
+  const value = chat && Object.hasOwn(chat, name) ? chat[name] : undefined;
   if (value != null)
     return String(value);
-  return getActiveScriptstateDefaults(readChatId(ctx))?.[name] ?? "null";
+  const characterDefaults = getActiveScriptstateDefaults(readChatId(ctx));
+  const characterDefault = characterDefaults && Object.hasOwn(characterDefaults, name) ? characterDefaults[name] : undefined;
+  if (characterDefault != null)
+    return characterDefault;
+  const defaults = ctx?.env?.extra?.presetMetadata?.lumirealm?.defaultVariables;
+  if (typeof defaults === "string") {
+    for (const line of defaults.split(`
+`)) {
+      const [key, value] = line.split("=");
+      if (key && value && key === name)
+        return value;
+    }
+  }
+  return "null";
 }
 async function evalRisuCalc(ctx) {
   const expr = getArg(ctx, 0);

@@ -32,13 +32,24 @@ function getArgs(ctx: unknown): string[] {
   return [];
 }
 
-// Risu's getChatVar: the chat variable, then the card's default variables, else
-// the literal null. The host carries Risu chat variables on `variables.chat`.
+// Risu's getChatVar gives chat values precedence over character and preset defaults.
 function readChatVar(ctx: unknown, name: string): string {
   const variables = (ctx as { env?: { variables?: Record<string, unknown> } })?.env?.variables;
-  const value = varRecord(variables?.['chat'])?.[name];
+  const chat = varRecord(variables?.['chat']);
+  const value = chat && Object.hasOwn(chat, name) ? chat[name] : undefined;
   if (value != null) return String(value);
-  return getActiveScriptstateDefaults(readChatId(ctx))?.[name] ?? 'null';
+  const characterDefaults = getActiveScriptstateDefaults(readChatId(ctx));
+  const characterDefault = characterDefaults && Object.hasOwn(characterDefaults, name) ? characterDefaults[name] : undefined;
+  if (characterDefault != null) return characterDefault;
+  const defaults = (ctx as { env?: { extra?: { presetMetadata?: { lumirealm?: { defaultVariables?: unknown } } } } })
+    ?.env?.extra?.presetMetadata?.lumirealm?.defaultVariables;
+  if (typeof defaults === 'string') {
+    for (const line of defaults.split('\n')) {
+      const [key, value] = line.split('=');
+      if (key && value && key === name) return value;
+    }
+  }
+  return 'null';
 }
 
 // Risu's calcString reads `$name` with getChatVar and `@name` with

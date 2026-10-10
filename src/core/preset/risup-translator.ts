@@ -734,7 +734,12 @@ export function translateRisuPreset(raw: RisuPresetRaw, fallbackName = 'Imported
       ...(raw.aiModel ? { risuAiModel: raw.aiModel } : {}),
       ...(raw.subModel ? { risuSubModel: raw.subModel } : {}),
       promptVariables: defaultsByBlockId,
-      ...(wholeHistory ? {} : { lumirealm: { chatRanges } }),
+      ...(!wholeHistory || typeof raw.templateDefaultVariables === 'string' ? {
+        lumirealm: {
+          ...(wholeHistory ? {} : { chatRanges }),
+          ...(typeof raw.templateDefaultVariables === 'string' ? { defaultVariables: raw.templateDefaultVariables } : {}),
+        },
+      } : {}),
     },
   };
 
