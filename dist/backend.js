@@ -22020,7 +22020,7 @@ function getActiveScriptstateDefaults(chatId) {
 var _log = makeSafeLogger("runtime.setVar");
 // spindle.json
 var spindle_default = {
-  version: "0.11.0",
+  version: "0.12.0",
   name: "LumiRealm",
   identifier: "lumirealm",
   author: "amousepad",
